@@ -12,6 +12,20 @@ ReqInfo = namedtuple("ReqInfo", ["type", "path", "params", "host"])
 from server import Server
 
 import gc
+import network
+
+def get_open_networks():
+    sta_if = network.WLAN(network.STA_IF)
+    sta_if.active(False)
+    sta_if.active(True)
+    ssids=[]
+    for _ in range(10):
+        ssids.extend(sorted(ssid.decode("utf-8") for ssid, *_ in sta_if.scan()))
+        if len(ssids) > 0:
+            break
+    sta_if.active(False)
+    print(f"Found {len(ssids)} networks")
+    return ssids
 
 
 def unquote(string):
@@ -49,7 +63,7 @@ class HTTPServer(Server):
             self.local_ip = local_ip.encode()
         self.request = dict()
         self.conns = dict()
-        self.routes = {b"/": b"./index.html", b"/login": self.login}
+        self.routes = {b"/": self.ssid_select_page, b"/login": self.login}
 
         self.ssid = None
 
@@ -127,9 +141,19 @@ class HTTPServer(Server):
 
         return b"", headers
 
+    def ssid_select_page(self, params):
+        headers = b"HTTP/1.1 200 OK\r\n"
+        ssids = get_open_networks()
+        formatted_ssids = [f'<option value="{ssid}">{ssid}</option>'
+                           for ssid in ssids]
+        with open("./index.html", "rb") as fh:
+            body = fh.read().format(ssid_list="\n".join(formatted_ssids))
+        return body, headers
+
     def connected(self, params):
         headers = b"HTTP/1.1 200 OK\r\n"
-        body = open("./connected.html", "rb").read() % (self.ssid, self.local_ip)
+        with open("./connected.html", "rb") as fh:
+            body = fh.read() % (self.ssid, self.local_ip)
         return body, headers
 
     def get_response(self, req):
@@ -140,17 +164,17 @@ class HTTPServer(Server):
 
         if type(route) is bytes:
             # expect a filename, so return contents of file
-            return open(route, "rb"), headers
-
-        if callable(route):
+            with open(route, "rb") as fh:
+                body = fh.read()
+        elif callable(route):
             # call a function, which may or may not return a response
             response = route(req.params)
             body = response[0] or b""
             headers = response[1] or headers
-            return uio.BytesIO(body), headers
-
-        headers = b"HTTP/1.1 404 Not Found\r\n"
-        return uio.BytesIO(b""), headers
+        else:
+            headers = b"HTTP/1.1 404 Not Found\r\n"
+            body = b""
+        return uio.BytesIO(body), headers
 
     def is_valid_req(self, req):
         if req.host != self.local_ip:
