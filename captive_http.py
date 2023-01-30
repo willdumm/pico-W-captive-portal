@@ -2,17 +2,18 @@ import uerrno
 import uio
 import uselect as select
 import usocket as socket
-
+import gc
+import network
 from collections import namedtuple
-from credentials import Creds
+
+from .credentials import Creds
+from .filepath import rel_path
+from .server import Server
+
+
 
 WriteConn = namedtuple("WriteConn", ["body", "buff", "buffmv", "write_range"])
 ReqInfo = namedtuple("ReqInfo", ["type", "path", "params", "host"])
-
-from server import Server
-
-import gc
-import network
 
 def get_open_networks():
     sta_if = network.WLAN(network.STA_IF)
@@ -146,13 +147,13 @@ class HTTPServer(Server):
         ssids = get_open_networks()
         formatted_ssids = [f'<option value="{ssid}">{ssid}</option>'
                            for ssid in ssids]
-        with open("./index.html", "rb") as fh:
+        with open(rel_path("index.html"), "rb") as fh:
             body = fh.read().format(ssid_list="\n".join(formatted_ssids))
         return body, headers
 
     def connected(self, params):
         headers = b"HTTP/1.1 200 OK\r\n"
-        with open("./connected.html", "rb") as fh:
+        with open(rel_path("connected.html"), "rb") as fh:
             body = fh.read() % (self.ssid, self.local_ip)
         return body, headers
 

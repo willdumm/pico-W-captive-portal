@@ -1,9 +1,10 @@
 import uos
+from . filepath import rel_path
 
 
 class Creds:
 
-    CRED_FILE = "./wifi.creds"
+    CRED_FILE = rel_path("wifi.creds")
 
     def __init__(self, ssid=None, password=None):
         self.ssid = ssid

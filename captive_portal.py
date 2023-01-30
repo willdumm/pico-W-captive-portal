@@ -4,9 +4,9 @@ import ubinascii as binascii
 import uselect as select
 import utime as time
 
-from captive_dns import DNSServer
-from captive_http import HTTPServer
-from credentials import Creds
+from .captive_dns import DNSServer
+from .captive_http import HTTPServer
+from .credentials import Creds
 
 
 class CaptivePortal:
@@ -148,6 +148,7 @@ class CaptivePortal:
         print("Cleaning up")
         if self.dns_server:
             self.dns_server.stop(self.poller)
+        self.ap_if.active(False)
         gc.collect()
 
     def try_connect_from_file(self):
