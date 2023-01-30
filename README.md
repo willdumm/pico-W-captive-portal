@@ -1,4 +1,18 @@
 # This repository is forked and modified from another!
+To use, do something like:
+```python
+from pico_W_captive_portal import CaptivePortal
+
+portal = CaptivePortal()
+portal.start()
+```
+This will:
+* attempt to connect to wifi with saved credentials (and return if successful)
+* start the AP mode wifi interface with ssid "WifiSetup", and serve a captive
+    portal to connected devices prompting a choice of network and password
+* connect with the provided credentials and if successful, save credentials to
+    file, stop AP mode wifi, and return.
+
 changes:
 * display a list of available networks, rather than requiring the network name
     to be typed in
