@@ -24,7 +24,9 @@ def get_open_networks():
         ssids.extend(sorted(ssid.decode("utf-8") for ssid, *_ in sta_if.scan()))
         if len(ssids) > 0:
             break
-    sta_if.active(False)
+    while sta_if.active():
+        sta_if.active(False)
+        time.sleep(1)
     print(f"Found {len(ssids)} networks")
     return ssids
 
